@@ -4,6 +4,7 @@ import 'package:get/get.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'firebase_options.dart';
+import 'package:clarity_flutter/clarity_flutter.dart';
 import 'package:unnati_jwelers/utils/app_colors.dart';
 import 'package:unnati_jwelers/view/auth/splash/splash_screen.dart';
 import 'package:unnati_jwelers/view/no_internet/no_internet_screen.dart';
@@ -16,7 +17,7 @@ Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
   // Ensure Firebase is initialized in the background isolate
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
   debugPrint('🔥 [FCM Background] Notification received:');
-  debugPrint('   Title : ${message.notification?.title}');
+  debugPrint('Title : ${message.notification?.title}');
   debugPrint('   Body  : ${message.notification?.body}');
   debugPrint('   Data  : ${message.data}');
 }
@@ -33,7 +34,15 @@ void main() async {
     debugPrint('Firebase initialization error: $e');
   }
   await GetStorage.init();
-  runApp(const MyApp());
+
+  var config = ClarityConfig(projectId: "xz1thy6x8b", logLevel: LogLevel.None);
+
+  runApp(
+    ClarityWidget(
+      app: const ClarityUnmask(child: MyApp()),
+      clarityConfig: config,
+    ),
+  );
 }
 
 class MyApp extends StatelessWidget {

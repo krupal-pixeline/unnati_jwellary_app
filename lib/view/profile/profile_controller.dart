@@ -123,19 +123,7 @@ class ProfileController extends GetxController {
   Future<void> fetchAddresses() async {
     try {
       isAddressLoading.value = true;
-      // Address API not provided, keeping mock addresses
-      addresses.value = [
-        CustomerAddress(
-          id: 'A1',
-          label: 'Home',
-          addressLine1: '12, Shanti Nagar Society',
-          addressLine2: 'Near Vijay Cross Roads',
-          city: 'Ahmedabad',
-          state: 'Gujarat',
-          pincode: '380009',
-          isDefault: true,
-        ),
-      ];
+      addresses.value = [];
     } catch (e) {
       // silent fail
     } finally {

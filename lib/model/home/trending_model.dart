@@ -36,6 +36,7 @@ class TrendingDataModel {
   final String title;
   final String subtitle;
   final String databaseId;
+  final String imageUrl;
 
   TrendingDataModel({
     required this.id,
@@ -43,6 +44,7 @@ class TrendingDataModel {
     required this.title,
     required this.subtitle,
     required this.databaseId,
+    required this.imageUrl,
   });
 
   factory TrendingDataModel.fromJson(Map<String, dynamic> json) {
@@ -52,6 +54,11 @@ class TrendingDataModel {
       title: json['title']?.toString() ?? '',
       subtitle: json['subtitle']?.toString() ?? '',
       databaseId: json['_id']?.toString() ?? '',
+      imageUrl: json['imageUrl']?.toString() ??
+          json['image']?.toString() ??
+          json['banner']?.toString() ??
+          json['cover']?.toString() ??
+          '',
     );
   }
 
@@ -62,6 +69,7 @@ class TrendingDataModel {
       'title': title,
       'subtitle': subtitle,
       '_id': databaseId,
+      'imageUrl': imageUrl,
     };
   }
 }

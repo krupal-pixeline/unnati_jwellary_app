@@ -63,6 +63,16 @@ class AppUrls {
   /// GET – Store Details CMS content
   static const String storeDetails = '${baseUrl}cms/store';
 
+  /// GET – Maintenance Status CMS content
+  static const String maintenance = '${baseUrl}cms/maintenance';
+
+  /// GET – App Version CMS content
+  static const String appVersion = '${baseUrl}cms/app-version';
+
+  /// Play Store App URL
+  static const String playStoreUrl =
+      'https://play.google.com/store/apps/details?id=com.unnati.jewellers&hl=en_IN';
+
   /// GET – Lucky Draw Assignments (coupons/my-assignments)
   static const String luckyDrawAssignments = '${baseUrl}coupons/my-assignments';
 

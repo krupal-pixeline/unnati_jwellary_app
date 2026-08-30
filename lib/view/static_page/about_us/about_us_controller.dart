@@ -15,18 +15,7 @@ class AboutUsController extends GetxController {
 
   // ── Carousel ─────────────────────────────────────────────────────────────
   final RxInt currentCarouselIndex = 0.obs;
-  final List<String> carouselImages = [
-    'assets/temp/demo_1.jpeg',
-    'assets/temp/demo_2.jpeg',
-    'assets/temp/demo_3.jpeg',
-    'assets/temp/demo_4.jpeg',
-    'assets/temp/demo_5.jpeg',
-    'assets/temp/demo_6.jpeg',
-    'assets/temp/demo_7.jpeg',
-    'assets/temp/demo_8.jpeg',
-    'assets/temp/demo_9.jpeg',
-    'assets/temp/demo_10.jpeg',
-  ];
+
 
   // ── Legacy Journey Timeline Data (Exact Documented Brand History) ─────────
   final List<Map<String, String>> timelineItems = [

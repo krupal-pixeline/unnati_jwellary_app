@@ -1188,6 +1188,8 @@ class _InfoRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    if (value.trim().isEmpty) return const SizedBox.shrink();
+
     return Column(
       children: [
         Padding(
@@ -1217,7 +1219,7 @@ class _InfoRow extends StatelessWidget {
                     ),
                     const SizedBox(height: 2),
                     Text(
-                      value.isNotEmpty ? value : 'Not provided',
+                      value,
                       style: GoogleFonts.outfit(
                         fontSize: 14,
                         fontWeight: FontWeight.bold,

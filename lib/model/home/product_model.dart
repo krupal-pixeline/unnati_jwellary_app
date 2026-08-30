@@ -169,8 +169,8 @@ class ProductDataModel {
   }
 
   Map<String, dynamic> toUiMap() {
-    // Handle dynamic network image vs. fallback
-    final String displayImage = images.isNotEmpty ? images.first : 'assets/temp/demo_1.jpeg';
+    // Handle dynamic network image
+    final String displayImage = images.isNotEmpty ? images.first : '';
     
     // Indian Currency formatting (e.g. 1,04,726)
     String displayPrice = '₹0';

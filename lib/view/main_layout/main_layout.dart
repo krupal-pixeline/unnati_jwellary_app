@@ -15,12 +15,10 @@ import '../category/category_screen.dart';
 import '../home/home_screen.dart';
 import '../profile/profile_controller.dart';
 import '../profile/profile_screen.dart';
-import '../suvarna/suvarna_main/suvarna_main_screen.dart';
 import '../lucky_draw/lucky_draw_screen.dart';
 import '../auth/login/login_screen.dart';
 import '../../utils/app_key_names.dart';
 import '../../utils/other_methods.dart';
-import 'notification_screen.dart';
 
 class MainLayoutController extends GetxController {
   final RxInt currentIndex = 0.obs;
@@ -35,9 +33,9 @@ class MainLayoutController extends GetxController {
   Future<void> loadAppVersion() async {
     try {
       final packageInfo = await PackageInfo.fromPlatform();
-      appVersion.value = "${packageInfo.version} (${packageInfo.buildNumber})";
+      appVersion.value = packageInfo.version;
     } catch (e) {
-      appVersion.value = "1.0.0";
+      appVersion.value = '';
     }
   }
 
@@ -306,7 +304,7 @@ class AppDrawer extends StatelessWidget {
                   title: "Lucky Draw",
                   onTap: () {
                     Get.back();
-                    layoutCtrl.changeTab(3);
+                    layoutCtrl.changeTab(2);
                   },
                 ),
                 _drawerItem(
@@ -315,7 +313,7 @@ class AppDrawer extends StatelessWidget {
                   title: "My Profile",
                   onTap: () {
                     Get.back();
-                    layoutCtrl.changeTab(4);
+                    layoutCtrl.changeTab(3);
                   },
                 ),
 

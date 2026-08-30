@@ -425,7 +425,7 @@ class _ProductSection extends StatelessWidget {
                 ),
                 Expanded(
                   flex: 2,
-                  child: Text('BUY',
+                  child: Text('PURCHASE',
                       textAlign: TextAlign.center,
                       style: GoogleFonts.poppins(
                           fontSize: 10,
@@ -434,7 +434,7 @@ class _ProductSection extends StatelessWidget {
                 ),
                 Expanded(
                   flex: 2,
-                  child: Text('SELL',
+                  child: Text('BUY BACK',
                       textAlign: TextAlign.center,
                       style: GoogleFonts.poppins(
                           fontSize: 10,
@@ -524,7 +524,46 @@ class _ProductSection extends StatelessWidget {
               ],
             ),
           ),
-          // BUY column (calculated 4% less than SELL)
+          // PURCHASE column (flashing box)
+          Expanded(
+            flex: 2,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                AnimatedContainer(
+                  duration: const Duration(milliseconds: 250),
+                  width: double.infinity,
+                  padding: const EdgeInsets.symmetric(vertical: 6),
+                  decoration: BoxDecoration(
+                    color: sellBoxColor,
+                    borderRadius: BorderRadius.circular(6),
+                    boxShadow: direction != 'neutral'
+                        ? [
+                            BoxShadow(
+                                color: sellBoxColor.withValues(alpha: 0.2),
+                                blurRadius: 6)
+                          ]
+                        : [],
+                  ),
+                  child: Text(
+                    c.formatPriceNoSymbol(price),
+                    textAlign: TextAlign.center,
+                    style: GoogleFonts.poppins(
+                      fontSize: 12,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white,
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(high == 0 ? 'H: —' : 'H-${c.formatPriceNoSymbol(high)}',
+                    style: GoogleFonts.poppins(
+                        fontSize: 9, color: AppColors.textTertiary)),
+              ],
+            ),
+          ),
+          const SizedBox(width: 8),
+          // BUY BACK column (calculated 4% less than SELL)
           Expanded(
             flex: 2,
             child: Column(
@@ -560,45 +599,6 @@ class _ProductSection extends StatelessWidget {
                   style: GoogleFonts.poppins(
                       fontSize: 9, color: AppColors.textTertiary),
                 ),
-              ],
-            ),
-          ),
-          const SizedBox(width: 8),
-          // SELL column (flashing box)
-          Expanded(
-            flex: 2,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.center,
-              children: [
-                AnimatedContainer(
-                  duration: const Duration(milliseconds: 250),
-                  width: double.infinity,
-                  padding: const EdgeInsets.symmetric(vertical: 6),
-                  decoration: BoxDecoration(
-                    color: sellBoxColor,
-                    borderRadius: BorderRadius.circular(6),
-                    boxShadow: direction != 'neutral'
-                        ? [
-                            BoxShadow(
-                                color: sellBoxColor.withValues(alpha: 0.2),
-                                blurRadius: 6)
-                          ]
-                        : [],
-                  ),
-                  child: Text(
-                    c.formatPriceNoSymbol(price),
-                    textAlign: TextAlign.center,
-                    style: GoogleFonts.poppins(
-                      fontSize: 12,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.white,
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Text(high == 0 ? 'H: —' : 'H-${c.formatPriceNoSymbol(high)}',
-                    style: GoogleFonts.poppins(
-                        fontSize: 9, color: AppColors.textTertiary)),
               ],
             ),
           ),

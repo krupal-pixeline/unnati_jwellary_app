@@ -3,10 +3,14 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
+import 'package:package_info_plus/package_info_plus.dart';
 import '../../../services/auth_api_services.dart';
+import '../../../services/cms_api_service.dart';
 import '../../../utils/app_key_names.dart';
 import '../../../utils/other_methods.dart';
 import '../../main_layout/main_layout.dart';
+import '../../maintenance/under_maintenance_screen.dart';
+import '../../update/app_update_screen.dart';
 import '../login/login_screen.dart';
 
 class SplashController extends GetxController
@@ -146,40 +150,95 @@ class SplashController extends GetxController
     animationController.addStatusListener((status) {
       if (status == AnimationStatus.completed) {
         Future.delayed(const Duration(milliseconds: 600), () async {
-          final token = OtherMethods.getStorage(AppKeyNames.bearerToken);
-          final refreshToken = OtherMethods.getStorage(AppKeyNames.refreshToken);
-          final userModel = OtherMethods.getStorage(AppKeyNames.userModel);
-          final userId = OtherMethods.getStorage(AppKeyNames.userId);
+          // ── 1. Check Under Maintenance API first ───────────────────────────
+          OtherMethods.customLog('🛠️ [SplashController] Checking maintenance status before session routing...');
+          final isUnderMaintenance = await CmsApiService().checkUnderMaintenance();
 
-          OtherMethods.customLog('📱 [SplashController] === SESSION STORAGE DETAILS ===');
-          OtherMethods.customLog('🔑 [SplashController] Access Token: $token');
-          OtherMethods.customLog('🔄 [SplashController] Refresh Token: $refreshToken');
-          OtherMethods.customLog('👤 [SplashController] User Model: $userModel');
-          OtherMethods.customLog('🆔 [SplashController] User ID: $userId');
-          OtherMethods.customLog('📱 [SplashController] =================================');
-
-          if (userModel != null && refreshToken != null && refreshToken.toString().isNotEmpty) {
-            OtherMethods.customLog('🔑 [SplashController] Session found! Refreshing Access Token on Splash...');
-            try {
-              await AuthApiService().refreshTokenApi(refreshToken: refreshToken.toString());
-              OtherMethods.customLog('✅ [SplashController] Refresh token succeeded on Splash! Routing to MainLayoutScreen.');
-              Get.offAll(() => MainLayoutScreen());
-            } catch (e) {
-              OtherMethods.customLog('❌ [SplashController] Token refresh failed on splash: $e. Clearing session & routing to LoginScreen.');
-              await OtherMethods.clearStorage();
-              Get.offAll(() => const LoginScreen());
-            }
-          } else if (userModel != null && token != null && token.toString().isNotEmpty) {
-            // Fallback for legacy session without refresh token
-            OtherMethods.customLog('🔑 [SplashController] Legacy Session found! Routing to MainLayoutScreen.');
-            Get.offAll(() => MainLayoutScreen());
-          } else {
-            OtherMethods.customLog('🔑 [SplashController] No session found. Routing to LoginScreen.');
-            Get.offAll(() => const LoginScreen());
+          if (isUnderMaintenance) {
+            OtherMethods.customLog('🚧 [SplashController] App IS under maintenance. Navigating to UnderMaintenanceScreen.');
+            Get.offAll(() => const UnderMaintenanceScreen());
+            return;
           }
+
+          // ── 2. Check App Version API ────────────────────────────────────────
+          OtherMethods.customLog('📱 [SplashController] Checking app version status...');
+          try {
+            final packageInfo = await PackageInfo.fromPlatform();
+            final currentVersion = packageInfo.version;
+            final versionInfo = await CmsApiService().getAppVersion();
+
+            if (versionInfo != null && versionInfo.appVersion.isNotEmpty) {
+              final latestVersion = versionInfo.appVersion;
+              final isUpdateRequired = versionInfo.isUpdateRequired;
+
+              OtherMethods.customLog('📱 [SplashController] Installed version: $currentVersion, API version: $latestVersion, isUpdateRequired: $isUpdateRequired');
+
+              if (currentVersion.trim() != latestVersion.trim()) {
+                if (isUpdateRequired) {
+                  // 🔴 Mandatory Update: Stop routing & show non-dismissible Force Update Screen
+                  OtherMethods.customLog('⛔ [SplashController] Mandatory Update Required! Navigating to AppUpdateScreen.');
+                  Get.offAll(() => AppUpdateScreen(
+                        currentVersion: currentVersion,
+                        latestVersion: latestVersion,
+                      ));
+                  return;
+                } else {
+                  // 🟡 Optional Update: Show Dialog & proceed to app on skip
+                  OtherMethods.customLog('⚠️ [SplashController] Optional Update Available. Showing Update Dialog.');
+                  showAppUpdateDialog(
+                    currentVersion: currentVersion,
+                    latestVersion: latestVersion,
+                    onSkip: () {
+                      _routeUserAfterSplash();
+                    },
+                  );
+                  return;
+                }
+              }
+            }
+          } catch (e) {
+            OtherMethods.customLog('⚠️ [SplashController] Version check error: $e');
+          }
+
+          // ── 3. Normal Session Routing ──────────────────────────────────────
+          _routeUserAfterSplash();
         });
       }
     });
+  }
+
+  Future<void> _routeUserAfterSplash() async {
+    final token = OtherMethods.getStorage(AppKeyNames.bearerToken);
+    final refreshToken = OtherMethods.getStorage(AppKeyNames.refreshToken);
+    final userModel = OtherMethods.getStorage(AppKeyNames.userModel);
+    final userId = OtherMethods.getStorage(AppKeyNames.userId);
+
+    OtherMethods.customLog('📱 [SplashController] === SESSION STORAGE DETAILS ===');
+    OtherMethods.customLog('🔑 [SplashController] Access Token: $token');
+    OtherMethods.customLog('🔄 [SplashController] Refresh Token: $refreshToken');
+    OtherMethods.customLog('👤 [SplashController] User Model: $userModel');
+    OtherMethods.customLog('🆔 [SplashController] User ID: $userId');
+    OtherMethods.customLog('📱 [SplashController] =================================');
+
+    if (userModel != null && refreshToken != null && refreshToken.toString().isNotEmpty) {
+      OtherMethods.customLog('🔑 [SplashController] Session found! Refreshing Access Token on Splash...');
+      try {
+        await AuthApiService().refreshTokenApi(refreshToken: refreshToken.toString());
+        OtherMethods.customLog('✅ [SplashController] Refresh token succeeded on Splash! Routing to MainLayoutScreen.');
+        Get.offAll(() => MainLayoutScreen());
+      } catch (e) {
+        OtherMethods.customLog('❌ [SplashController] Token refresh failed on splash: $e. Clearing session & routing to LoginScreen.');
+        await OtherMethods.clearStorage();
+        Get.offAll(() => const LoginScreen());
+      }
+    } else if (userModel != null && token != null && token.toString().isNotEmpty) {
+      // Fallback for legacy session without refresh token
+      OtherMethods.customLog('🔑 [SplashController] Legacy Session found! Routing to MainLayoutScreen.');
+      Get.offAll(() => MainLayoutScreen());
+    } else {
+      OtherMethods.customLog('🔑 [SplashController] No session found. Routing to LoginScreen.');
+      Get.offAll(() => const LoginScreen());
+    }
   }
 
   Future<void> _setupFirebaseMessaging() async {

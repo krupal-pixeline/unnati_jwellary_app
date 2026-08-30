@@ -8,17 +8,36 @@ import 'photo_gallery_screen.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../utils/custom_app_bar.dart';
 
-class ProductDetailsScreen extends StatelessWidget {
-  const ProductDetailsScreen({super.key});
+class ProductDetailsScreen extends StatefulWidget {
+  final String? tag;
+  const ProductDetailsScreen({super.key, this.tag});
 
   @override
-  Widget build(BuildContext context) {
-    // Instantiate or find the controller
-    final controller = Get.put(ProductDetailsController());
-    final PageController pageController = PageController();
+  State<ProductDetailsScreen> createState() => _ProductDetailsScreenState();
+}
 
-    // Listen to changes in active image to sync page view
-    ever(controller.currentImageIndex, (index) {
+class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
+  late final String _screenTag;
+  late final ProductDetailsController controller;
+  late final PageController pageController;
+  Worker? _imageIndexWorker;
+
+  @override
+  void initState() {
+    super.initState();
+    final Map<String, dynamic>? args = Get.arguments is Map<String, dynamic>
+        ? Map<String, dynamic>.from(Get.arguments as Map<String, dynamic>)
+        : null;
+    final String? argId = args?['id']?.toString() ?? args?['_id']?.toString();
+    _screenTag = widget.tag ??
+        (argId != null && argId.isNotEmpty
+            ? "${argId}_${DateTime.now().microsecondsSinceEpoch}"
+            : DateTime.now().microsecondsSinceEpoch.toString());
+
+    controller = Get.put(ProductDetailsController(), tag: _screenTag);
+    pageController = PageController();
+
+    _imageIndexWorker = ever(controller.currentImageIndex, (index) {
       if (pageController.hasClients && pageController.page?.round() != index) {
         pageController.animateToPage(
           index,
@@ -27,31 +46,45 @@ class ProductDetailsScreen extends StatelessWidget {
         );
       }
     });
+  }
 
+  @override
+  void dispose() {
+    _imageIndexWorker?.dispose();
+    pageController.dispose();
+    Get.delete<ProductDetailsController>(tag: _screenTag);
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.backgroundPrimary,
 
       // ── Custom AppBar ──────────────────────────────────────────────────────
-      appBar: CustomAppBar(
-        title: controller.product['name']?.toString().isNotEmpty == true
-            ? controller.product['name'].toString()
-            : 'Details',
-        actions: [
-          Obx(
-            () => IconButton(
-              icon: Icon(
-                controller.isWishlisted.value
-                    ? Icons.favorite
-                    : Icons.favorite_border,
-                color: controller.isWishlisted.value
-                    ? Colors.red
-                    : Colors.white,
+      appBar: PreferredSize(
+        preferredSize: const Size.fromHeight(56),
+        child: Obx(
+          () => CustomAppBar(
+            title: controller.product['name']?.toString().isNotEmpty == true
+                ? controller.product['name'].toString()
+                : 'Details',
+            actions: [
+              IconButton(
+                icon: Icon(
+                  controller.isWishlisted.value
+                      ? Icons.favorite
+                      : Icons.favorite_border,
+                  color: controller.isWishlisted.value
+                      ? Colors.red
+                      : Colors.white,
+                ),
+                onPressed: () => controller.toggleWishlist(),
               ),
-              onPressed: () => controller.toggleWishlist(),
-            ),
+              const SizedBox(width: 8),
+            ],
           ),
-          const SizedBox(width: 8),
-        ],
+        ),
       ),
 
       // ── Main Content Area ──────────────────────────────────────────────────
@@ -70,29 +103,42 @@ class ProductDetailsScreen extends StatelessWidget {
                 _buildMainImageSlider(context, controller, pageController),
                 const SizedBox(height: 2),
 
-                // 2. Thumbnail Strip Card
-                _buildSectionCard(
-                  child: _buildThumbnailStrip(controller),
-                  padding: const EdgeInsets.symmetric(
-                    vertical: 8,
-                    horizontal: 8,
-                  ),
-                ),
+                // 2. Thumbnail Strip Card (Shown only if more than 1 image)
+                Obx(() {
+                  if (controller.productImages.length <= 1) {
+                    return const SizedBox.shrink();
+                  }
+                  return _buildSectionCard(
+                    child: _buildThumbnailStrip(controller),
+                    padding: const EdgeInsets.symmetric(
+                      vertical: 8,
+                      horizontal: 8,
+                    ),
+                  );
+                }),
 
                 // 3. Product Header (Title, Price, Hallmark)
                 _buildSectionCard(child: _buildProductHeader(controller)),
 
-                // 4. Product Highlights Grid Card
-                _buildSectionCard(
-                  child: _buildHighlightsGrid(controller),
-                  padding: const EdgeInsets.symmetric(
-                    vertical: 10,
-                    horizontal: 8,
-                  ),
-                ),
+                // 4. Product Highlights Grid Card (Shown only if highlights exist)
+                Obx(() {
+                  final highlightsWidget = _buildHighlightsGrid(controller);
+                  if (highlightsWidget is SizedBox) return const SizedBox.shrink();
+                  return _buildSectionCard(
+                    child: highlightsWidget,
+                    padding: const EdgeInsets.symmetric(
+                      vertical: 10,
+                      horizontal: 8,
+                    ),
+                  );
+                }),
 
-                // 5. About Product / Description Card
-                _buildSectionCard(child: _buildAboutProduct(controller)),
+                // 5. About Product / Description Card (Shown only if description exists)
+                Obx(() {
+                  final rawDesc = controller.product['description']?.toString() ?? '';
+                  if (rawDesc.trim().isEmpty) return const SizedBox.shrink();
+                  return _buildSectionCard(child: _buildAboutProduct(controller));
+                }),
 
                 // 6. Jewellery Details Section Header & Tab Bar Switcher
                 _buildJewelleryDetailsHeader(controller),
@@ -136,11 +182,16 @@ class ProductDetailsScreen extends StatelessWidget {
                   );
                 }),
 
-                // 6. Related Products Card
-                _buildSectionCard(
-                  child: _buildRelatedProductsSection(controller),
-                  padding: const EdgeInsets.only(top: 10, bottom: 12),
-                ),
+                // 6. Related Products Card (Shown only if related products exist)
+                Obx(() {
+                  if (controller.relatedProducts.isEmpty) {
+                    return const SizedBox.shrink();
+                  }
+                  return _buildSectionCard(
+                    child: _buildRelatedProductsSection(controller),
+                    padding: const EdgeInsets.only(top: 10, bottom: 12),
+                  );
+                }),
 
                 const SizedBox(height: 12),
               ],
@@ -169,11 +220,11 @@ class ProductDetailsScreen extends StatelessWidget {
         borderRadius: BorderRadius.zero,
         border: Border(
           top: BorderSide(
-            color: AppColors.divider.withOpacity(0.5),
+            color: AppColors.divider.withValues(alpha: 0.5),
             width: 0.5,
           ),
           bottom: BorderSide(
-            color: AppColors.divider.withOpacity(0.5),
+            color: AppColors.divider.withValues(alpha: 0.5),
             width: 0.5,
           ),
         ),
@@ -195,144 +246,171 @@ class ProductDetailsScreen extends StatelessWidget {
           color: Colors.white,
           border: Border(
             bottom: BorderSide(
-              color: AppColors.divider.withOpacity(0.5),
+              color: AppColors.divider.withValues(alpha: 0.5),
               width: 0.5,
             ),
           ),
         ),
         child: ClipRRect(
           borderRadius: BorderRadius.zero,
-          child: Stack(
-            children: [
-              // PageView for swiping images
-              PageView.builder(
-                controller: pageController,
-                itemCount: controller.productImages.length,
-                onPageChanged: (index) =>
-                    controller.currentImageIndex.value = index,
-                itemBuilder: (context, index) {
-                  return GestureDetector(
+          child: Obx(() {
+            if (controller.productImages.isEmpty) {
+              return Container(
+                color: AppColors.backgroundSecondary.withValues(alpha: 0.2),
+                child: const Center(
+                  child: Icon(
+                    Icons.image_not_supported_outlined,
+                    size: 64,
+                    color: AppColors.primaryGold,
+                  ),
+                ),
+              );
+            }
+
+            return Stack(
+              children: [
+                // PageView for swiping images
+                PageView.builder(
+                  controller: pageController,
+                  itemCount: controller.productImages.length,
+                  onPageChanged: (index) =>
+                      controller.currentImageIndex.value = index,
+                  itemBuilder: (context, index) {
+                    final imgPath = controller.productImages[index];
+                    return GestureDetector(
+                      onTap: () {
+                        Get.to(
+                          () => ImagePreviewScreen(
+                            images: controller.productImages,
+                            initialIndex: index,
+                          ),
+                        );
+                      },
+                      child: imgPath.startsWith('http')
+                          ? Image.network(
+                              imgPath,
+                              fit: BoxFit.cover,
+                              width: double.infinity,
+                              loadingBuilder: (context, child, loadingProgress) {
+                                if (loadingProgress == null) return child;
+                                return const Center(
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                    valueColor: AlwaysStoppedAnimation<Color>(
+                                      AppColors.primaryMaroon,
+                                    ),
+                                  ),
+                                );
+                              },
+                              errorBuilder: (context, error, stackTrace) =>
+                                  Container(
+                                    color: AppColors.paleGold,
+                                    child: const Center(
+                                      child: Icon(
+                                        Icons.image_not_supported_outlined,
+                                        size: 64,
+                                        color: AppColors.primaryGold,
+                                      ),
+                                    ),
+                                  ),
+                            )
+                          : (imgPath.startsWith('assets/')
+                              ? Image.asset(
+                                  imgPath,
+                                  fit: BoxFit.cover,
+                                  width: double.infinity,
+                                  errorBuilder: (context, error, stackTrace) =>
+                                      Container(
+                                        color: AppColors.paleGold,
+                                        child: const Center(
+                                          child: Icon(
+                                            Icons.image_not_supported_outlined,
+                                            size: 64,
+                                            color: AppColors.primaryGold,
+                                          ),
+                                        ),
+                                      ),
+                                )
+                              : Container(
+                                  color: AppColors.paleGold,
+                                  child: const Center(
+                                    child: Icon(
+                                      Icons.image_not_supported_outlined,
+                                      size: 64,
+                                      color: AppColors.primaryGold,
+                                    ),
+                                  ),
+                                )),
+                    );
+                  },
+                ),
+
+                // Dot Indicator Overlay (Bottom Center)
+                Positioned(
+                  bottom: 15,
+                  left: 0,
+                  right: 0,
+                  child: Obx(
+                    () => Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: List.generate(
+                        controller.productImages.length,
+                        (index) => AnimatedContainer(
+                          duration: const Duration(milliseconds: 250),
+                          margin: const EdgeInsets.symmetric(horizontal: 4),
+                          height: 6,
+                          width: controller.currentImageIndex.value == index
+                              ? 18
+                              : 6,
+                          decoration: BoxDecoration(
+                            color: controller.currentImageIndex.value == index
+                                ? AppColors.primaryMaroon
+                                : AppColors.primaryGold.withValues(alpha: 0.4),
+                            borderRadius: BorderRadius.circular(3),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+
+                // Zoom Icon Overlay (Bottom Right)
+                Positioned(
+                  bottom: 12,
+                  right: 12,
+                  child: GestureDetector(
                     onTap: () {
                       Get.to(
                         () => ImagePreviewScreen(
                           images: controller.productImages,
-                          initialIndex: index,
+                          initialIndex: controller.currentImageIndex.value,
                         ),
                       );
                     },
-                    child: controller.productImages[index].startsWith('http')
-                        ? Image.network(
-                            controller.productImages[index],
-                            fit: BoxFit.cover,
-                            width: double.infinity,
-                            loadingBuilder: (context, child, loadingProgress) {
-                              if (loadingProgress == null) return child;
-                              return const Center(
-                                child: CircularProgressIndicator(
-                                  strokeWidth: 2,
-                                  valueColor: AlwaysStoppedAnimation<Color>(
-                                    AppColors.primaryMaroon,
-                                  ),
-                                ),
-                              );
-                            },
-                            errorBuilder: (context, error, stackTrace) =>
-                                Container(
-                                  color: AppColors.paleGold,
-                                  child: const Center(
-                                    child: Icon(
-                                      Icons.image,
-                                      size: 64,
-                                      color: AppColors.primaryGold,
-                                    ),
-                                  ),
-                                ),
-                          )
-                        : Image.asset(
-                            controller.productImages[index],
-                            fit: BoxFit.cover,
-                            width: double.infinity,
-                            errorBuilder: (context, error, stackTrace) =>
-                                Container(
-                                  color: AppColors.paleGold,
-                                  child: const Center(
-                                    child: Icon(
-                                      Icons.image,
-                                      size: 64,
-                                      color: AppColors.primaryGold,
-                                    ),
-                                  ),
-                                ),
+                    child: Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: const BoxDecoration(
+                        color: Colors.white,
+                        shape: BoxShape.circle,
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black12,
+                            blurRadius: 6,
+                            offset: Offset(0, 2),
                           ),
-                  );
-                },
-              ),
-
-              // Dot Indicator Overlay (Bottom Center)
-              Positioned(
-                bottom: 15,
-                left: 0,
-                right: 0,
-                child: Obx(
-                  () => Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: List.generate(
-                      controller.productImages.length,
-                      (index) => AnimatedContainer(
-                        duration: const Duration(milliseconds: 250),
-                        margin: const EdgeInsets.symmetric(horizontal: 4),
-                        height: 6,
-                        width: controller.currentImageIndex.value == index
-                            ? 18
-                            : 6,
-                        decoration: BoxDecoration(
-                          color: controller.currentImageIndex.value == index
-                              ? AppColors.primaryMaroon
-                              : AppColors.primaryGold.withOpacity(0.4),
-                          borderRadius: BorderRadius.circular(3),
-                        ),
+                        ],
+                      ),
+                      child: const Icon(
+                        Icons.zoom_in_rounded,
+                        color: AppColors.textPrimary,
+                        size: 22,
                       ),
                     ),
                   ),
                 ),
-              ),
-
-              // Zoom Icon Overlay (Bottom Right)
-              Positioned(
-                bottom: 12,
-                right: 12,
-                child: GestureDetector(
-                  onTap: () {
-                    Get.to(
-                      () => ImagePreviewScreen(
-                        images: controller.productImages,
-                        initialIndex: controller.currentImageIndex.value,
-                      ),
-                    );
-                  },
-                  child: Container(
-                    padding: const EdgeInsets.all(8),
-                    decoration: const BoxDecoration(
-                      color: Colors.white,
-                      shape: BoxShape.circle,
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black12,
-                          blurRadius: 6,
-                          offset: Offset(0, 2),
-                        ),
-                      ],
-                    ),
-                    child: const Icon(
-                      Icons.zoom_in_rounded,
-                      color: AppColors.textPrimary,
-                      size: 22,
-                    ),
-                  ),
-                ),
-              ),
-            ],
-          ),
+              ],
+            );
+          }),
         ),
       ),
     );
@@ -378,7 +456,7 @@ class ProductDetailsScreen extends StatelessWidget {
                   border: Border.all(
                     color: isSelected && !isLast
                         ? AppColors.primaryMaroon
-                        : AppColors.border.withOpacity(0.6),
+                        : AppColors.border.withValues(alpha: 0.6),
                     width: isSelected && !isLast ? 2.0 : 1.0,
                   ),
                 ),
@@ -433,7 +511,7 @@ class ProductDetailsScreen extends StatelessWidget {
                             ),
                       if (isLast)
                         Container(
-                          color: Colors.black.withOpacity(0.55),
+                          color: Colors.black.withValues(alpha: 0.55),
                           alignment: Alignment.center,
                           child: Text(
                             "+${controller.productImages.length - 4}\nView All",
@@ -534,7 +612,7 @@ class ProductDetailsScreen extends StatelessWidget {
                 Row(
                   children: [
                     Text(
-                      controller.product['price'] ?? '₹1,85,000',
+                      controller.product['price']?.toString() ?? '',
                       style: GoogleFonts.outfit(
                         color: AppColors.primaryMaroon,
                         fontSize: 24,
@@ -542,9 +620,10 @@ class ProductDetailsScreen extends StatelessWidget {
                       ),
                     ),
                     const SizedBox(width: 8),
-                    if (controller.product['originalPrice'] != null)
+                    if (controller.product['originalPrice'] != null &&
+                        controller.product['originalPrice'].toString().trim().isNotEmpty)
                       Text(
-                        controller.product['originalPrice'],
+                        controller.product['originalPrice'].toString(),
                         style: GoogleFonts.outfit(
                           color: AppColors.textTertiary,
                           fontSize: 16,
@@ -569,10 +648,10 @@ class ProductDetailsScreen extends StatelessWidget {
               child: Container(
                 padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                 decoration: BoxDecoration(
-                  color: AppColors.primaryMaroon.withOpacity(0.08),
+                  color: AppColors.primaryMaroon.withValues(alpha: 0.08),
                   borderRadius: BorderRadius.circular(20),
                   border: Border.all(
-                    color: AppColors.primaryGold.withOpacity(0.5),
+                    color: AppColors.primaryGold.withValues(alpha: 0.5),
                   ),
                 ),
                 child: Row(
@@ -636,7 +715,7 @@ class ProductDetailsScreen extends StatelessWidget {
           border: Border.all(color: const Color(0xFFE8D6C8), width: 1.2),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.04),
+              color: Colors.black.withValues(alpha: 0.04),
               blurRadius: 10,
               offset: const Offset(0, 3),
             ),
@@ -731,9 +810,11 @@ class ProductDetailsScreen extends StatelessWidget {
   Widget _buildPriceBreakupSection(ProductDetailsController controller) {
     final prod = controller.product;
 
-    final String purity = prod['purity']?.toString() ?? prod['karat']?.toString() ?? '22K';
-    final String metalType = prod['metal']?.toString() ?? prod['metalType']?.toString() ?? 'Gold';
-    final String metalTitle = "$purity Hallmarked $metalType";
+    final String purity = prod['purity']?.toString() ?? prod['karat']?.toString() ?? '';
+    final String metalType = prod['metal']?.toString() ?? prod['metalType']?.toString() ?? '';
+    final String metalTitle = purity.isNotEmpty && metalType.isNotEmpty
+        ? "$purity Hallmarked $metalType"
+        : (metalType.isNotEmpty ? metalType : (purity.isNotEmpty ? purity : "Metal"));
 
     final double? weightVal = prod['weight'] != null
         ? double.tryParse(prod['weight'].toString().replaceAll(RegExp(r'[^\d.]'), ''))
@@ -777,10 +858,10 @@ class ProductDetailsScreen extends StatelessWidget {
 
     final double? gstValue = prod['gstValue'] != null
         ? double.tryParse(prod['gstValue'].toString())
-        : 3.0;
+        : null;
     final double? gstAmount = prod['gst'] != null
         ? double.tryParse(prod['gst'].toString())
-        : (subTotal > 0 ? subTotal * ((gstValue ?? 3.0) / 100) : null);
+        : (subTotal > 0 && gstValue != null ? subTotal * (gstValue / 100) : null);
     final String gstLabel = gstValue != null && gstValue > 0 ? "GST (${gstValue.toStringAsFixed(0)}%)" : "GST";
     final String gstStr = _formatIndianCurrency(gstAmount);
 
@@ -788,6 +869,22 @@ class ProductDetailsScreen extends StatelessWidget {
         ? double.tryParse(prod['calculatedPrice'].toString())
         : (subTotal > 0 ? subTotal + (gstAmount ?? 0.0) : null);
     final String grandTotalStr = _formatIndianCurrency(grandTotal);
+
+    final bool hasPriceData = baseRate != null || metalValue != null || makingCharge != null || (grandTotal != null && grandTotal > 0);
+    if (!hasPriceData) {
+      return Container(
+        padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 16),
+        alignment: Alignment.center,
+        child: Text(
+          "Price breakup details are not available for this item.",
+          style: GoogleFonts.outfit(
+            color: AppColors.textSecondary,
+            fontSize: 13,
+            fontWeight: FontWeight.w500,
+          ),
+        ),
+      );
+    }
 
     return Container(
       margin: const EdgeInsets.symmetric(vertical: 4),
@@ -800,7 +897,7 @@ class ProductDetailsScreen extends StatelessWidget {
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.03),
+            color: Colors.black.withValues(alpha: 0.03),
             blurRadius: 12,
             offset: const Offset(0, 3),
           ),
@@ -1037,7 +1134,7 @@ class ProductDetailsScreen extends StatelessWidget {
                 color: const Color(0xFFFAF0F2),
                 border: Border(
                   top: BorderSide(
-                    color: AppColors.primaryMaroon.withOpacity(0.35),
+                    color: AppColors.primaryMaroon.withValues(alpha: 0.35),
                     width: 1.2,
                   ),
                 ),
@@ -1189,29 +1286,95 @@ class ProductDetailsScreen extends StatelessWidget {
 
   // ── Highlights Grid ────────────────────────────────────────────────────────
   Widget _buildHighlightsGrid(ProductDetailsController controller) {
-    return GridView.count(
+    final prod = controller.product;
+    final List<Map<String, dynamic>> highlights = [];
+
+    final String purity = prod['purity']?.toString() ?? prod['karat']?.toString() ?? '';
+    if (purity.trim().isNotEmpty) {
+      highlights.add({
+        'label': 'Purity',
+        'val': purity,
+        'icon': Icons.workspace_premium_outlined,
+      });
+    }
+
+    final String weight = prod['weight']?.toString() ?? '';
+    if (weight.trim().isNotEmpty) {
+      highlights.add({
+        'label': 'Weight',
+        'val': weight,
+        'icon': Icons.scale_outlined,
+      });
+    }
+
+    final String metal = prod['metal']?.toString() ?? prod['metalType']?.toString() ?? '';
+    if (metal.trim().isNotEmpty) {
+      highlights.add({
+        'label': 'Metal',
+        'val': metal,
+        'icon': Icons.diamond_outlined,
+      });
+    }
+
+    final String gender = prod['gender']?.toString() ?? '';
+    if (gender.trim().isNotEmpty) {
+      highlights.add({
+        'label': 'Gender',
+        'val': gender,
+        'icon': Icons.person_outline,
+      });
+    }
+
+    final String collection = prod['collection']?.toString() ?? '';
+    if (collection.trim().isNotEmpty) {
+      highlights.add({
+        'label': 'Collection',
+        'val': collection,
+        'icon': Icons.stars_outlined,
+      });
+    }
+
+    final String occasion = prod['occasion']?.toString() ?? '';
+    if (occasion.trim().isNotEmpty) {
+      highlights.add({
+        'label': 'Occasion',
+        'val': occasion,
+        'icon': Icons.celebration_outlined,
+      });
+    }
+
+    final String hallmark = prod['hallmark']?.toString() ?? '';
+    if (hallmark.trim().isNotEmpty) {
+      highlights.add({
+        'label': 'Certification',
+        'val': hallmark,
+        'icon': Icons.verified_outlined,
+      });
+    }
+
+    if (highlights.isEmpty) {
+      return const SizedBox.shrink();
+    }
+
+    final int count = highlights.length;
+    final int crossAxisCount = count < 4 ? count : 4;
+
+    return GridView.builder(
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
-      crossAxisCount: 4,
-      childAspectRatio: 1.05,
-      children: [
-        _highlightItem(
-          "Gold Purity",
-          controller.product['karat'] ?? '22K',
-          Icons.workspace_premium_outlined,
-        ),
-        _highlightItem(
-          "Weight",
-          controller.product['weight'] ?? '18.45 gm',
-          Icons.scale_outlined,
-        ),
-        _highlightItem("Collection", "Royal", Icons.stars_outlined),
-        _highlightItem(
-          "Occasion",
-          controller.product['occasion'] ?? 'Wedding',
-          Icons.celebration_outlined,
-        ),
-      ],
+      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+        crossAxisCount: crossAxisCount,
+        childAspectRatio: 1.05,
+      ),
+      itemCount: count,
+      itemBuilder: (context, index) {
+        final item = highlights[index];
+        return _highlightItem(
+          item['label'] as String,
+          item['val'] as String,
+          item['icon'] as IconData,
+        );
+      },
     );
   }
 
@@ -1418,7 +1581,7 @@ class ProductDetailsScreen extends StatelessWidget {
         Container(
           decoration: BoxDecoration(
             border: Border(
-              top: BorderSide(color: AppColors.divider.withOpacity(0.5)),
+              top: BorderSide(color: AppColors.divider.withValues(alpha: 0.5)),
             ),
           ),
           child: GridView.builder(
@@ -1665,31 +1828,43 @@ class ProductDetailsScreen extends StatelessWidget {
                                         height: 224,
                                         child: const Center(
                                           child: Icon(
-                                            Icons.image,
+                                            Icons.image_not_supported_outlined,
                                             size: 36,
                                             color: AppColors.primaryGold,
                                           ),
                                         ),
                                       ),
                                 )
-                              : Image.asset(
-                                  relItem['image']?.toString() ?? 'assets/temp/demo_1.jpeg',
-                                  height: 224,
-                                  width: double.infinity,
-                                  fit: BoxFit.cover,
-                                  errorBuilder: (context, error, stackTrace) =>
-                                      Container(
-                                        color: AppColors.paleGold.withValues(alpha: 0.3),
-                                        height: 224,
-                                        child: const Center(
-                                          child: Icon(
-                                            Icons.image,
-                                            size: 36,
-                                            color: AppColors.primaryGold,
+                              : (relItem['image'] != null && relItem['image'].toString().startsWith('assets/')
+                                  ? Image.asset(
+                                      relItem['image'].toString(),
+                                      height: 224,
+                                      width: double.infinity,
+                                      fit: BoxFit.cover,
+                                      errorBuilder: (context, error, stackTrace) =>
+                                          Container(
+                                            color: AppColors.paleGold.withValues(alpha: 0.3),
+                                            height: 224,
+                                            child: const Center(
+                                              child: Icon(
+                                                Icons.image_not_supported_outlined,
+                                                size: 36,
+                                                color: AppColors.primaryGold,
+                                              ),
+                                            ),
                                           ),
+                                    )
+                                  : Container(
+                                      color: AppColors.paleGold.withValues(alpha: 0.3),
+                                      height: 224,
+                                      child: const Center(
+                                        child: Icon(
+                                          Icons.image_not_supported_outlined,
+                                          size: 36,
+                                          color: AppColors.primaryGold,
                                         ),
                                       ),
-                                ),
+                                    )),
                         ),
 
                         // Related Info
@@ -1742,11 +1917,11 @@ class ProductDetailsScreen extends StatelessWidget {
       decoration: BoxDecoration(
         color: Colors.white,
         border: Border(
-          top: BorderSide(color: AppColors.divider.withOpacity(0.5)),
+          top: BorderSide(color: AppColors.divider.withValues(alpha: 0.5)),
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.04),
+            color: Colors.black.withValues(alpha: 0.04),
             blurRadius: 10,
             offset: const Offset(0, -4),
           ),
@@ -1769,7 +1944,7 @@ class ProductDetailsScreen extends StatelessWidget {
                       borderRadius: BorderRadius.circular(12),
                       boxShadow: [
                         BoxShadow(
-                          color: AppColors.primaryMaroon.withOpacity(0.15),
+                          color: AppColors.primaryMaroon.withValues(alpha: 0.15),
                           blurRadius: 6,
                           offset: const Offset(0, 3),
                         ),
@@ -1803,11 +1978,12 @@ class ProductDetailsScreen extends StatelessWidget {
             Expanded(
               child: OutlinedButton(
                 onPressed: () async {
-                  final String phone = "+919876543210";
+                  final String phone = "+916351630432";
                   final String productName =
-                      controller.product['name'] ?? 'Jewelry';
-                  final String message =
-                      "Hello Unnati Jewelers, I am interested in learning more about the '$productName'.";
+                      controller.product['name']?.toString().trim() ?? '';
+                  final String message = productName.isNotEmpty
+                      ? "Hi, I'm interested in: *$productName*. Could you share more details?"
+                      : "Hi, I'm interested in your products. Could you share more details?";
                   final Uri whatsappUri = Uri.parse(
                     "https://wa.me/$phone?text=${Uri.encodeComponent(message)}",
                   );
@@ -2006,7 +2182,7 @@ class ProductDetailsScreen extends StatelessWidget {
                             },
                             selectedColor: AppColors.paleGold,
                             backgroundColor: AppColors.backgroundSecondary
-                                .withOpacity(0.3),
+                                .withValues(alpha: 0.3),
                             labelStyle: GoogleFonts.outfit(
                               color: isTodaySelected
                                   ? AppColors.maroonPrimary
@@ -2021,7 +2197,7 @@ class ProductDetailsScreen extends StatelessWidget {
                               side: BorderSide(
                                 color: isTodaySelected
                                     ? AppColors.primaryGold
-                                    : AppColors.border.withOpacity(0.4),
+                                    : AppColors.border.withValues(alpha: 0.4),
                                 width: 1,
                               ),
                             ),
@@ -2041,7 +2217,7 @@ class ProductDetailsScreen extends StatelessWidget {
                             },
                             selectedColor: AppColors.paleGold,
                             backgroundColor: AppColors.backgroundSecondary
-                                .withOpacity(0.3),
+                                .withValues(alpha: 0.3),
                             labelStyle: GoogleFonts.outfit(
                               color: isTomorrowSelected
                                   ? AppColors.maroonPrimary
@@ -2056,7 +2232,7 @@ class ProductDetailsScreen extends StatelessWidget {
                               side: BorderSide(
                                 color: isTomorrowSelected
                                     ? AppColors.primaryGold
-                                    : AppColors.border.withOpacity(0.4),
+                                    : AppColors.border.withValues(alpha: 0.4),
                                 width: 1,
                               ),
                             ),
@@ -2119,7 +2295,7 @@ class ProductDetailsScreen extends StatelessWidget {
                             },
                             selectedColor: AppColors.paleGold,
                             backgroundColor: AppColors.backgroundSecondary
-                                .withOpacity(0.3),
+                                .withValues(alpha: 0.3),
                             labelStyle: GoogleFonts.outfit(
                               color: isCustomDateSelected
                                   ? AppColors.maroonPrimary
@@ -2134,7 +2310,7 @@ class ProductDetailsScreen extends StatelessWidget {
                               side: BorderSide(
                                 color: isCustomDateSelected
                                     ? AppColors.primaryGold
-                                    : AppColors.border.withOpacity(0.4),
+                                    : AppColors.border.withValues(alpha: 0.4),
                                 width: 1,
                               ),
                             ),
@@ -2219,19 +2395,19 @@ class ProductDetailsScreen extends StatelessWidget {
                           vertical: 8,
                         ),
                         filled: true,
-                        fillColor: AppColors.backgroundSecondary.withOpacity(
-                          0.3,
+                        fillColor: AppColors.backgroundSecondary.withValues(
+                          alpha: 0.3,
                         ),
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(10),
                           borderSide: BorderSide(
-                            color: AppColors.border.withOpacity(0.5),
+                            color: AppColors.border.withValues(alpha: 0.5),
                           ),
                         ),
                         enabledBorder: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(10),
                           borderSide: BorderSide(
-                            color: AppColors.border.withOpacity(0.5),
+                            color: AppColors.border.withValues(alpha: 0.5),
                           ),
                         ),
                         focusedBorder: OutlineInputBorder(
@@ -2280,19 +2456,19 @@ class ProductDetailsScreen extends StatelessWidget {
                           vertical: 8,
                         ),
                         filled: true,
-                        fillColor: AppColors.backgroundSecondary.withOpacity(
-                          0.3,
+                        fillColor: AppColors.backgroundSecondary.withValues(
+                          alpha: 0.3,
                         ),
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(10),
                           borderSide: BorderSide(
-                            color: AppColors.border.withOpacity(0.5),
+                            color: AppColors.border.withValues(alpha: 0.5),
                           ),
                         ),
                         enabledBorder: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(10),
                           borderSide: BorderSide(
-                            color: AppColors.border.withOpacity(0.5),
+                            color: AppColors.border.withValues(alpha: 0.5),
                           ),
                         ),
                         focusedBorder: OutlineInputBorder(
@@ -2346,17 +2522,17 @@ class ProductDetailsScreen extends StatelessWidget {
                         vertical: 8,
                       ),
                       filled: true,
-                      fillColor: AppColors.backgroundSecondary.withOpacity(0.3),
+                      fillColor: AppColors.backgroundSecondary.withValues(alpha: 0.3),
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(10),
                         borderSide: BorderSide(
-                          color: AppColors.border.withOpacity(0.5),
+                          color: AppColors.border.withValues(alpha: 0.5),
                         ),
                       ),
                       enabledBorder: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(10),
                         borderSide: BorderSide(
-                          color: AppColors.border.withOpacity(0.5),
+                          color: AppColors.border.withValues(alpha: 0.5),
                         ),
                       ),
                       focusedBorder: OutlineInputBorder(
@@ -2414,7 +2590,9 @@ class ProductDetailsScreen extends StatelessWidget {
                                       '',
                                 );
                                 if (success) {
-                                  Navigator.pop(context);
+                                  if (context.mounted) {
+                                    Navigator.pop(context);
+                                  }
                                   Get.snackbar(
                                     "Booking Confirmed!",
                                     "Showroom visit scheduled for $dateStr during $apiTimeSlot.",
@@ -2468,13 +2646,13 @@ class ProductDetailsScreen extends StatelessWidget {
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
         decoration: BoxDecoration(
           color: isSelected
-              ? AppColors.paleGold.withOpacity(0.3)
+              ? AppColors.paleGold.withValues(alpha: 0.3)
               : Colors.transparent,
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
             color: isSelected
                 ? AppColors.primaryGold
-                : AppColors.border.withOpacity(0.4),
+                : AppColors.border.withValues(alpha: 0.4),
             width: isSelected ? 1.5 : 1,
           ),
         ),
@@ -2488,6 +2666,7 @@ class ProductDetailsScreen extends StatelessWidget {
               size: 20,
             ),
             const SizedBox(width: 12),
+
             Expanded(
               child: Text(
                 slotName,

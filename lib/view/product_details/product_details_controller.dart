@@ -48,86 +48,31 @@ class ProductDetailsController extends GetxController {
         isLoading.value = false;
       }
     } else {
-      // Fallback to high-quality default product if opened directly or without arguments
       _applyDefaultFallback();
       isLoading.value = false;
     }
-
-    // Initialize mock related products
-    relatedProducts.assignAll([
-      {
-        'name': '22K Gold Antique Necklace',
-        'price': '₹1,65,000',
-        'originalPrice': '₹1,80,000',
-        'weight': '16.5g',
-        'karat': '22K',
-        'image': 'assets/temp/demo_2.jpeg',
-        'rating': 4.8,
-        'reviews': 94,
-        'isWishlisted': false,
-        'badge': 'ANTIQUE',
-      },
-      {
-        'name': 'Kundan Floral Gold Necklace',
-        'price': '₹1,45,000',
-        'originalPrice': '₹1,60,000',
-        'weight': '14.8g',
-        'karat': '22K',
-        'image': 'assets/temp/demo_3.jpeg',
-        'rating': 4.7,
-        'reviews': 63,
-        'isWishlisted': false,
-        'badge': 'TRENDING',
-      },
-      {
-        'name': 'Classic Royal Gold Choker',
-        'price': '₹1,75,000',
-        'originalPrice': '₹1,95,000',
-        'weight': '17.9g',
-        'karat': '22K',
-        'image': 'assets/temp/demo_4.jpeg',
-        'rating': 4.9,
-        'reviews': 112,
-        'isWishlisted': false,
-        'badge': 'ROYAL',
-      },
-      {
-        'name': 'Bridal Gold Necklace Set',
-        'price': '₹1,35,000',
-        'originalPrice': '₹1,50,000',
-        'weight': '13.2g',
-        'karat': '22K',
-        'image': 'assets/temp/demo_5.jpeg',
-        'rating': 4.6,
-        'reviews': 47,
-        'isWishlisted': false,
-        'badge': 'NEW',
-      },
-    ]);
   }
 
   void _applyLocalArgs(Map<String, dynamic> args) {
-    args['category'] ??= 'Necklace';
-    args['collection'] ??= 'Royal Collection';
-    args['purity'] ??= '${args['karat'] ?? '22K'} (916)';
-    args['metal'] ??= 'Gold';
-    args['color'] ??= 'Yellow Gold';
-    args['occasion'] ??= 'Wedding';
-    args['hallmark'] ??= 'BIS Certified';
-    args['makingCharges'] ??= 'Included';
-    args['gst'] ??= 'Included';
-    args['description'] ??= 'A timeless masterpiece that reflects royalty and grace. Designed in ${args['karat'] ?? '22K'} gold with fine detailing and a weight of ${args['weight'] ?? '18.45 gm'}, this piece adds a touch of elegance to your special moments. Crafted by master artisans, it features delicate carvings and premium finishing, making it the perfect heirloom piece.';
-
     product.assignAll(args);
     
-    final WishlistController wishlistController = Get.find<WishlistController>();
-    final id = product['id']?.toString() ?? product['_id']?.toString() ?? '';
-    isWishlisted.value = wishlistController.isProductWishlisted(product['name'] ?? '', id: id);
+    try {
+      if (Get.isRegistered<WishlistController>()) {
+        final WishlistController wishlistController = Get.find<WishlistController>();
+        final id = product['id']?.toString() ?? product['_id']?.toString() ?? '';
+        isWishlisted.value = wishlistController.isProductWishlisted(product['name']?.toString() ?? '', id: id);
+      }
+    } catch (_) {}
 
-    productImages.assignAll(
-      List.generate(10, (index) => 'assets/temp/demo_${index + 1}.jpeg'),
-    );
-    if (product['image'] != null) {
+    if (args['images'] != null && args['images'] is List && (args['images'] as List).isNotEmpty) {
+      productImages.assignAll((args['images'] as List).map((e) => e.toString()).toList());
+    } else if (args['image'] != null && args['image'].toString().isNotEmpty) {
+      productImages.assignAll([args['image'].toString()]);
+    } else {
+      productImages.clear();
+    }
+
+    if (product['image'] != null && productImages.isNotEmpty) {
       final int imgIndex = productImages.indexOf(product['image'] as String);
       if (imgIndex != -1) {
         currentImageIndex.value = imgIndex;
@@ -136,32 +81,10 @@ class ProductDetailsController extends GetxController {
   }
 
   void _applyDefaultFallback() {
-    product.assignAll({
-      'name': '',
-      'category': '',
-      'collection': '',
-      'price': '',
-      'originalPrice': '',
-      'weight': '',
-      'karat': '',
-      'purity': '',
-      'metal': '',
-      'color': '',
-      'occasion': '',
-      'hallmark': '',
-      'makingCharges': '',
-      'gst': '',
-      'badge': '',
-      'description': '',
-    });
-
-    final WishlistController wishlistController = Get.find<WishlistController>();
-    final id = product['id']?.toString() ?? product['_id']?.toString() ?? '';
-    isWishlisted.value = wishlistController.isProductWishlisted(product['name'] ?? '', id: id);
-
-    productImages.assignAll(
-      List.generate(10, (index) => 'assets/temp/demo_${index + 1}.jpeg'),
-    );
+    product.clear();
+    productImages.clear();
+    relatedProducts.clear();
+    isWishlisted.value = false;
   }
 
   Future<void> fetchProductDetails(String id) async {
@@ -174,14 +97,20 @@ class ProductDetailsController extends GetxController {
 
       if (response.data.images.isNotEmpty) {
         productImages.assignAll(response.data.images);
+      } else if (mapped['image'] != null && mapped['image'].toString().isNotEmpty) {
+        productImages.assignAll([mapped['image'].toString()]);
       } else {
-        productImages.assignAll([mapped['image'] ?? 'assets/temp/demo_1.jpeg']);
+        productImages.clear();
       }
 
       currentImageIndex.value = 0;
 
-      final WishlistController wishlistController = Get.find<WishlistController>();
-      isWishlisted.value = wishlistController.isProductWishlisted(product['name'] ?? '', id: id);
+      try {
+        if (Get.isRegistered<WishlistController>()) {
+          final WishlistController wishlistController = Get.find<WishlistController>();
+          isWishlisted.value = wishlistController.isProductWishlisted(product['name']?.toString() ?? '', id: id);
+        }
+      } catch (_) {}
 
       // Fetch related products from API
       try {
@@ -191,7 +120,7 @@ class ProductDetailsController extends GetxController {
         relatedProducts.assignAll(mappedRelated);
       } catch (e) {
         OtherMethods.customLog("[ProductDetailsController] Error loading related products: $e");
-        // Maintain the mock list as a fallback if API fails
+        relatedProducts.clear();
       }
 
     } catch (e) {

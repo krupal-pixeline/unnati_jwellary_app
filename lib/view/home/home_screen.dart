@@ -48,13 +48,11 @@ class HomeScreen extends StatelessWidget {
                   _GoldRatesSection(controller: c),
                   const SizedBox(height: 24),
 
-                  // 3. Categories (moved below live rates)
+                  // 3. Categories
                   _CategoriesSection(controller: c),
-                  const SizedBox(height: 8),
 
                   // Showcase Collections (Main Highlight)
                   _ShowcaseCollectionsSection(controller: c),
-                  const SizedBox(height: 24),
 
                   // Shop by Gender
                   _GenderSection(controller: c),
@@ -62,32 +60,15 @@ class HomeScreen extends StatelessWidget {
 
                   // Trending Collections
                   _TrendingCollectionsSection(controller: c),
-                  const SizedBox(height: 24),
 
                   // 4. Featured Products
-                  // 4. Featured Products
-                  const SectionHeader(
-                    title: 'Featured',
-                    subtitle: 'Handpicked for you',
-                  ),
                   _FeaturedProductsSection(controller: c),
-                  const SizedBox(height: 24),
 
                   // 5. New Arrivals
-                  const SectionHeader(
-                    title: 'New Arrivals',
-                    subtitle: 'Just landed',
-                  ),
                   _NewArrivalsSection(controller: c),
-                  const SizedBox(height: 24),
 
                   // 6. Best Sellers
-                  const SectionHeader(
-                    title: 'Best Sellers',
-                    subtitle: 'Most loved pieces',
-                  ),
                   _BestSellersSection(controller: c),
-                  const SizedBox(height: 24),
 
                   // Lucky Draw Banner
                   _LuckyDrawBanner(controller: c),
@@ -95,7 +76,6 @@ class HomeScreen extends StatelessWidget {
 
                   // Instagram Reels
                   _InstagramReelsSection(controller: c),
-                  const SizedBox(height: 24),
 
                   // 9. Gold Scheme Comparison
                   const SectionHeader(
@@ -219,19 +199,12 @@ class _BannerSlider extends StatelessWidget {
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(16),
             border: Border.all(
-              color: AppColors.champagneGold.withValues(alpha: 0.25),
+              color: AppColors.champagneGold.withValues(alpha: 0.3),
               width: 1.5,
             ),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: 0.15),
-                blurRadius: 10,
-                offset: const Offset(0, 5),
-              ),
-            ],
           ),
           child: ClipRRect(
-            borderRadius: BorderRadius.circular(14),
+            borderRadius: BorderRadius.circular(14.5),
             child: Stack(
               children: [
                 PageView.builder(
@@ -282,6 +255,9 @@ class _BannerItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final bool hasTitle = banner.title.trim().isNotEmpty;
+    final bool hasSubtitle = banner.subtitle.trim().isNotEmpty;
+
     return GestureDetector(
       onTap: () {
         if (banner.linkType == 'product' && banner.linkTarget.isNotEmpty) {
@@ -354,67 +330,68 @@ class _BannerItem extends StatelessWidget {
               ),
             ),
           ),
-          // Dark luxury bottom gradient overlay for readability
-          Container(
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.bottomCenter,
-                end: Alignment.topCenter,
-                colors: [
-                  Colors.black.withValues(alpha: 0.85),
-                  Colors.black.withValues(alpha: 0.35),
-                  Colors.black.withValues(alpha: 0.0),
+          // Content (Rendered cleanly without dark shadow overlays)
+          if (hasTitle || hasSubtitle)
+            Padding(
+              padding: const EdgeInsets.only(
+                left: 16,
+                right: 16,
+                bottom: 20,
+                top: 16,
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisAlignment: MainAxisAlignment.end,
+                children: [
+                  if (hasTitle)
+                    SizedBox(
+                      width: MediaQuery.of(context).size.width * 0.8,
+                      child: Text(
+                        banner.title,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: GoogleFonts.cinzel(
+                          color: Colors.white,
+                          fontSize: 16,
+                          fontWeight: FontWeight.w700,
+                          height: 1.25,
+                          letterSpacing: 0.5,
+                          shadows: const [
+                            Shadow(
+                              color: Colors.black87,
+                              blurRadius: 6,
+                              offset: Offset(0, 1),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  if (hasSubtitle) ...[
+                    const SizedBox(height: 4),
+                    SizedBox(
+                      width: MediaQuery.of(context).size.width * 0.8,
+                      child: Text(
+                        banner.subtitle,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: GoogleFonts.poppins(
+                          color: Colors.white,
+                          fontSize: 10,
+                          height: 1.4,
+                          shadows: const [
+                            Shadow(
+                              color: Colors.black87,
+                              blurRadius: 4,
+                              offset: Offset(0, 1),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ],
                 ],
-                stops: const [0.0, 0.55, 1.0],
               ),
             ),
-          ),
-          // Content
-          Padding(
-            padding: const EdgeInsets.only(
-              left: 16,
-              right: 16,
-              bottom: 20,
-              top: 16,
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisAlignment: MainAxisAlignment.end,
-              children: [
-                // Title
-                SizedBox(
-                  width: MediaQuery.of(context).size.width * 0.8,
-                  child: Text(
-                    banner.title,
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                    style: GoogleFonts.cinzel(
-                      color: Colors.white,
-                      fontSize: 16,
-                      fontWeight: FontWeight.w700,
-                      height: 1.25,
-                      letterSpacing: 0.5,
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 4),
-                // Subtitle
-                SizedBox(
-                  width: MediaQuery.of(context).size.width * 0.8,
-                  child: Text(
-                    banner.subtitle,
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                    style: GoogleFonts.poppins(
-                      color: Colors.white.withValues(alpha: 0.7),
-                      fontSize: 10,
-                      height: 1.4,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
         ],
       ),
     );
@@ -694,32 +671,37 @@ class _CategoriesSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      children: [
-        const SectionHeader(
-          title: 'Shop by Category',
-          subtitle: 'Discover our collections',
-        ),
-        SizedBox(
-          height: 112,
-          child: Obx(() {
-            if (controller.isCategoriesLoading.value) {
-              return const _CategoryShimmer();
-            }
+    return Obx(() {
+      if (controller.isCategoriesLoading.value) {
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: const [
+            SectionHeader(
+              title: 'Shop by Category',
+              subtitle: 'Discover our collections',
+            ),
+            SizedBox(height: 12),
+            SizedBox(height: 112, child: _CategoryShimmer()),
+            SizedBox(height: 24),
+          ],
+        );
+      }
 
-            if (controller.categoriesList.isEmpty) {
-              return const Center(
-                child: Text(
-                  'No categories available',
-                  style: TextStyle(
-                    color: AppColors.textSecondary,
-                    fontSize: 12,
-                  ),
-                ),
-              );
-            }
+      if (controller.categoriesList.isEmpty) {
+        return const SizedBox.shrink();
+      }
 
-            return ListView.builder(
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const SectionHeader(
+            title: 'Shop by Category',
+            subtitle: 'Discover our collections',
+          ),
+          const SizedBox(height: 12),
+          SizedBox(
+            height: 112,
+            child: ListView.builder(
               scrollDirection: Axis.horizontal,
               padding: const EdgeInsets.symmetric(horizontal: 12),
               itemCount: controller.categoriesList.length,
@@ -828,11 +810,12 @@ class _CategoriesSection extends StatelessWidget {
                   ),
                 );
               },
-            );
-          }),
-        ),
-      ],
-    );
+            ),
+          ),
+          const SizedBox(height: 24),
+        ],
+      );
+    });
   }
 }
 
@@ -1068,38 +1051,58 @@ class _FeaturedProductsSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return SizedBox(
-      height: 260,
-      child: Obx(() {
-        if (controller.isFeaturedLoading.value) {
-          return const _ProductShimmer(height: 260, width: 175);
-        }
-
-        if (controller.featuredList.isEmpty) {
-          return const Center(
-            child: Text(
-              'No featured products available',
-              style: TextStyle(color: AppColors.textSecondary, fontSize: 12),
+    return Obx(() {
+      if (controller.isFeaturedLoading.value) {
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: const [
+            SectionHeader(
+              title: 'Featured',
+              subtitle: 'Handpicked for you',
             ),
-          );
-        }
-
-        return ListView.builder(
-          scrollDirection: Axis.horizontal,
-          padding: const EdgeInsets.symmetric(horizontal: 12),
-          itemCount: controller.featuredList.length,
-          itemBuilder: (context, i) {
-            final p = controller.featuredList[i].toUiMap();
-            return _ProductCard(
-              product: p,
-              index: i,
-              controller: controller,
-              width: 175,
-            );
-          },
+            SizedBox(height: 12),
+            SizedBox(
+              height: 260,
+              child: _ProductShimmer(height: 260, width: 175),
+            ),
+            SizedBox(height: 24),
+          ],
         );
-      }),
-    );
+      }
+
+      if (controller.featuredList.isEmpty) {
+        return const SizedBox.shrink();
+      }
+
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const SectionHeader(
+            title: 'Featured',
+            subtitle: 'Handpicked for you',
+          ),
+          const SizedBox(height: 12),
+          SizedBox(
+            height: 260,
+            child: ListView.builder(
+              scrollDirection: Axis.horizontal,
+              padding: const EdgeInsets.symmetric(horizontal: 12),
+              itemCount: controller.featuredList.length,
+              itemBuilder: (context, i) {
+                final p = controller.featuredList[i].toUiMap();
+                return _ProductCard(
+                  product: p,
+                  index: i,
+                  controller: controller,
+                  width: 175,
+                );
+              },
+            ),
+          ),
+          const SizedBox(height: 24),
+        ],
+      );
+    });
   }
 }
 
@@ -1394,38 +1397,58 @@ class _NewArrivalsSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return SizedBox(
-      height: 245,
-      child: Obx(() {
-        if (controller.isNewArrivalsLoading.value) {
-          return const _ProductShimmer(height: 245, width: 155);
-        }
-
-        if (controller.newArrivalsList.isEmpty) {
-          return const Center(
-            child: Text(
-              'No new arrivals available',
-              style: TextStyle(color: AppColors.textSecondary, fontSize: 12),
+    return Obx(() {
+      if (controller.isNewArrivalsLoading.value) {
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: const [
+            SectionHeader(
+              title: 'New Arrivals',
+              subtitle: 'Just landed',
             ),
-          );
-        }
-
-        return ListView.builder(
-          scrollDirection: Axis.horizontal,
-          padding: const EdgeInsets.symmetric(horizontal: 12),
-          itemCount: controller.newArrivalsList.length,
-          itemBuilder: (context, i) {
-            final product = controller.newArrivalsList[i].toUiMap();
-            return _ArchedProductCard(
-              product: product,
-              index: i,
-              controller: controller,
-              width: 155,
-            );
-          },
+            SizedBox(height: 12),
+            SizedBox(
+              height: 245,
+              child: _ProductShimmer(height: 245, width: 155),
+            ),
+            SizedBox(height: 24),
+          ],
         );
-      }),
-    );
+      }
+
+      if (controller.newArrivalsList.isEmpty) {
+        return const SizedBox.shrink();
+      }
+
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const SectionHeader(
+            title: 'New Arrivals',
+            subtitle: 'Just landed',
+          ),
+          const SizedBox(height: 12),
+          SizedBox(
+            height: 245,
+            child: ListView.builder(
+              scrollDirection: Axis.horizontal,
+              padding: const EdgeInsets.symmetric(horizontal: 12),
+              itemCount: controller.newArrivalsList.length,
+              itemBuilder: (context, i) {
+                final product = controller.newArrivalsList[i].toUiMap();
+                return _ArchedProductCard(
+                  product: product,
+                  index: i,
+                  controller: controller,
+                  width: 155,
+                );
+              },
+            ),
+          ),
+          const SizedBox(height: 24),
+        ],
+      );
+    });
   }
 }
 
@@ -1438,61 +1461,78 @@ class _BestSellersSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 10),
-      child: Obx(() {
-        if (controller.isBestSellersLoading.value) {
-          return GridView.count(
-            crossAxisCount: 2,
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            mainAxisSpacing: 8,
-            crossAxisSpacing: 8,
-            childAspectRatio: 0.72,
-            children: List.generate(4, (i) {
-              return Container(
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(12),
-                  color: Colors.grey[200],
-                ),
-              );
-            }),
-          );
-        }
-
-        if (controller.bestSellersList.isEmpty) {
-          return const Center(
-            child: Padding(
-              padding: EdgeInsets.symmetric(vertical: 20),
-              child: Text(
-                'No best sellers available',
-                style: TextStyle(color: AppColors.textSecondary, fontSize: 12),
+    return Obx(() {
+      if (controller.isBestSellersLoading.value) {
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const SectionHeader(
+              title: 'Best Sellers',
+              subtitle: 'Most loved pieces',
+            ),
+            const SizedBox(height: 12),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 10),
+              child: GridView.count(
+                crossAxisCount: 2,
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                mainAxisSpacing: 8,
+                crossAxisSpacing: 8,
+                childAspectRatio: 0.72,
+                children: List.generate(4, (i) {
+                  return Container(
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(12),
+                      color: Colors.grey[200],
+                    ),
+                  );
+                }),
               ),
             ),
-          );
-        }
-
-        return GridView.builder(
-          shrinkWrap: true,
-          physics: const NeverScrollableScrollPhysics(),
-          itemCount: controller.bestSellersList.length.clamp(0, 4),
-          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-            crossAxisCount: 2,
-            mainAxisSpacing: 8,
-            crossAxisSpacing: 8,
-            childAspectRatio: 0.72,
-          ),
-          itemBuilder: (context, i) {
-            final product = controller.bestSellersList[i].toUiMap();
-            return _ProductCard(
-              product: product,
-              index: i,
-              controller: controller,
-            );
-          },
+            const SizedBox(height: 24),
+          ],
         );
-      }),
-    );
+      }
+
+      if (controller.bestSellersList.isEmpty) {
+        return const SizedBox.shrink();
+      }
+
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const SectionHeader(
+            title: 'Best Sellers',
+            subtitle: 'Most loved pieces',
+          ),
+          const SizedBox(height: 12),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 10),
+            child: GridView.builder(
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              itemCount: controller.bestSellersList.length.clamp(0, 4),
+              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                crossAxisCount: 2,
+                mainAxisSpacing: 8,
+                crossAxisSpacing: 8,
+                childAspectRatio: 0.72,
+              ),
+              itemBuilder: (context, i) {
+                final product = controller.bestSellersList[i].toUiMap();
+                return _ProductCard(
+                  product: product,
+                  index: i,
+                  controller: controller,
+                );
+              },
+            ),
+          ),
+          const SizedBox(height: 24),
+        ],
+      );
+    });
   }
 }
 
@@ -2242,34 +2282,37 @@ class _InstagramReelsSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const SectionHeader(
-          title: 'Unnati On Instagram',
-          subtitle: 'Watch our collections in action',
-        ),
-        const SizedBox(height: 12),
-        SizedBox(
-          height: 220,
-          child: Obx(() {
-            if (controller.isStylingLoading.value) {
-              return const _ReelsShimmer();
-            }
+    return Obx(() {
+      if (controller.isStylingLoading.value) {
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: const [
+            SectionHeader(
+              title: 'Unnati On Instagram',
+              subtitle: 'Watch our collections in action',
+            ),
+            SizedBox(height: 12),
+            SizedBox(height: 220, child: _ReelsShimmer()),
+            SizedBox(height: 24),
+          ],
+        );
+      }
 
-            if (controller.stylingReelsList.isEmpty) {
-              return const Center(
-                child: Text(
-                  'No Instagram reels available',
-                  style: TextStyle(
-                    color: AppColors.textSecondary,
-                    fontSize: 12,
-                  ),
-                ),
-              );
-            }
+      if (controller.stylingReelsList.isEmpty) {
+        return const SizedBox.shrink();
+      }
 
-            return ListView.builder(
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const SectionHeader(
+            title: 'Unnati On Instagram',
+            subtitle: 'Watch our collections in action',
+          ),
+          const SizedBox(height: 12),
+          SizedBox(
+            height: 220,
+            child: ListView.builder(
               padding: const EdgeInsets.symmetric(horizontal: 16),
               scrollDirection: Axis.horizontal,
               physics: const BouncingScrollPhysics(),
@@ -2394,11 +2437,12 @@ class _InstagramReelsSection extends StatelessWidget {
                   ),
                 );
               },
-            );
-          }),
-        ),
-      ],
-    );
+            ),
+          ),
+          const SizedBox(height: 24),
+        ],
+      );
+    });
   }
 }
 
@@ -2486,34 +2530,37 @@ class _TrendingCollectionsSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const SectionHeader(
-          title: 'Trending Collections',
-          subtitle: 'Handcrafted signature lines',
-        ),
-        const SizedBox(height: 12),
-        SizedBox(
-          height: 160,
-          child: Obx(() {
-            if (controller.isTrendingLoading.value) {
-              return const _TrendingShimmer();
-            }
+    return Obx(() {
+      if (controller.isTrendingLoading.value) {
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: const [
+            SectionHeader(
+              title: 'Trending Collections',
+              subtitle: 'Handcrafted signature lines',
+            ),
+            SizedBox(height: 12),
+            SizedBox(height: 170, child: _TrendingShimmer()),
+            SizedBox(height: 24),
+          ],
+        );
+      }
 
-            if (controller.trendingList.isEmpty) {
-              return const Center(
-                child: Text(
-                  'No trending collections available',
-                  style: TextStyle(
-                    color: AppColors.textSecondary,
-                    fontSize: 12,
-                  ),
-                ),
-              );
-            }
+      if (controller.trendingList.isEmpty) {
+        return const SizedBox.shrink();
+      }
 
-            return ListView.builder(
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const SectionHeader(
+            title: 'Trending Collections',
+            subtitle: 'Handcrafted signature lines',
+          ),
+          const SizedBox(height: 12),
+          SizedBox(
+            height: 170,
+            child: ListView.builder(
               padding: const EdgeInsets.symmetric(horizontal: 16),
               scrollDirection: Axis.horizontal,
               physics: const BouncingScrollPhysics(),
@@ -2523,84 +2570,116 @@ class _TrendingCollectionsSection extends StatelessWidget {
                 final String fallbackImage =
                     fallbackImages[index % fallbackImages.length];
 
+                final String targetId = col.productId.isNotEmpty
+                    ? col.productId
+                    : (col.databaseId.isNotEmpty ? col.databaseId : col.id);
+
+                final bool hasNetworkImage =
+                    col.imageUrl.trim().startsWith('http');
+
                 return GestureDetector(
                   onTap: () {
-                    // Open ProductListScreen and fetch products dynamically by collection ID
+                    // Open Product Details screen directly on click
                     Get.to(
-                      () => ProductListScreen(
-                        title: col.title,
-                        extraParams: {
-                          'collection': col.productId,
-                        },
-                      ),
+                      () => const ProductDetailsScreen(),
+                      arguments: {
+                        'id': targetId,
+                        'name': col.title,
+                        if (hasNetworkImage) 'image': col.imageUrl,
+                      },
                     );
                   },
                   child: Container(
-                    width: 240,
+                    width: 170,
+                    height: 170,
                     margin: const EdgeInsets.only(right: 14, bottom: 8),
                     decoration: BoxDecoration(
                       borderRadius: BorderRadius.circular(16),
+                      border: Border.all(
+                        color: AppColors.champagneGold.withValues(alpha: 0.35),
+                        width: 1,
+                      ),
                       boxShadow: [
                         BoxShadow(
-                          color: Colors.black.withValues(alpha: 0.1),
+                          color: Colors.black.withValues(alpha: 0.04),
                           blurRadius: 8,
-                          offset: const Offset(0, 4),
+                          offset: const Offset(0, 3),
                         ),
                       ],
                     ),
                     child: ClipRRect(
-                      borderRadius: BorderRadius.circular(16),
+                      borderRadius: BorderRadius.circular(15),
                       child: Stack(
                         fit: StackFit.expand,
                         children: [
-                          // Background image
-                          Image.asset(fallbackImage, fit: BoxFit.cover),
-                          // Dark premium gradient overlay
+                          // Background image (Network or fallback asset)
+                          hasNetworkImage
+                              ? Image.network(
+                                  col.imageUrl,
+                                  fit: BoxFit.cover,
+                                  errorBuilder: (_, __, ___) => Image.asset(
+                                    fallbackImage,
+                                    fit: BoxFit.cover,
+                                  ),
+                                )
+                              : Image.asset(fallbackImage, fit: BoxFit.cover),
+
+                          // Dark gradient overlay for bottom text contrast
                           Container(
                             decoration: BoxDecoration(
                               gradient: LinearGradient(
-                                begin: Alignment.centerLeft,
-                                end: Alignment.centerRight,
+                                begin: Alignment.topCenter,
+                                end: Alignment.bottomCenter,
                                 colors: [
+                                  Colors.black.withValues(alpha: 0.1),
                                   Colors.black.withValues(alpha: 0.8),
-                                  Colors.black.withValues(alpha: 0.25),
                                 ],
+                                stops: const [0.3, 1.0],
                               ),
                             ),
                           ),
+
                           // Text contents
                           Padding(
-                            padding: const EdgeInsets.all(16),
+                            padding: const EdgeInsets.all(12),
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               mainAxisAlignment: MainAxisAlignment.end,
                               children: [
-                                Text(
-                                  col.title,
-                                  style: GoogleFonts.cinzel(
-                                    color: Colors.white,
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.bold,
-                                    letterSpacing: 0.5,
+                                if (col.title.isNotEmpty)
+                                  Text(
+                                    col.title,
+                                    maxLines: 2,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: GoogleFonts.cinzel(
+                                      color: Colors.white,
+                                      fontSize: 13,
+                                      fontWeight: FontWeight.bold,
+                                      height: 1.2,
+                                      letterSpacing: 0.5,
+                                    ),
                                   ),
-                                ),
-                                const SizedBox(height: 4),
-                                Text(
-                                  col.subtitle,
-                                  style: GoogleFonts.poppins(
-                                    color: Colors.white.withValues(alpha: 0.75),
-                                    fontSize: 11,
-                                    fontWeight: FontWeight.w400,
+                                if (col.subtitle.isNotEmpty) ...[
+                                  const SizedBox(height: 3),
+                                  Text(
+                                    col.subtitle,
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: GoogleFonts.poppins(
+                                      color: AppColors.champagneGold,
+                                      fontSize: 9.5,
+                                      fontWeight: FontWeight.w500,
+                                    ),
                                   ),
-                                ),
-                                const Spacer(),
+                                ],
+                                const SizedBox(height: 8),
                                 Row(
                                   children: [
                                     Text(
                                       'Explore Collection',
                                       style: GoogleFonts.poppins(
-                                        color: AppColors.champagneGold,
-                                        fontSize: 11,
+                                        color: Colors.white,
+                                        fontSize: 9.5,
                                         fontWeight: FontWeight.w600,
                                       ),
                                     ),
@@ -2608,7 +2687,7 @@ class _TrendingCollectionsSection extends StatelessWidget {
                                     const Icon(
                                       Icons.arrow_forward_rounded,
                                       color: AppColors.champagneGold,
-                                      size: 12,
+                                      size: 11,
                                     ),
                                   ],
                                 ),
@@ -2621,11 +2700,12 @@ class _TrendingCollectionsSection extends StatelessWidget {
                   ),
                 );
               },
-            );
-          }),
-        ),
-      ],
-    );
+            ),
+          ),
+          const SizedBox(height: 24),
+        ],
+      );
+    });
   }
 }
 
@@ -2686,7 +2766,8 @@ class _TrendingShimmerState extends State<_TrendingShimmer>
           itemCount: 3,
           itemBuilder: (context, i) {
             return Container(
-              width: 240,
+              width: 170,
+              height: 170,
               margin: const EdgeInsets.only(right: 14, bottom: 8),
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(16),
@@ -2727,23 +2808,6 @@ class _GenderSection extends StatelessWidget {
             children: genders.map((g) {
               return GestureDetector(
                 onTap: () {
-                  final allProducts = <String, Map<String, dynamic>>{};
-                  for (var p in controller.featuredList) { allProducts[p.id] = p.toUiMap(); }
-                  for (var p in controller.newArrivalsList) { allProducts[p.id] = p.toUiMap(); }
-                  for (var p in controller.bestSellersList) { allProducts[p.id] = p.toUiMap(); }
-
-                  final filtered = allProducts.values.where((p) {
-                    final prodGender = (p['gender']?.toString() ?? '').toLowerCase();
-                    if (g['key'] == 'unisex') {
-                      return prodGender == 'unisex';
-                    } else if (g['key'] == 'kids') {
-                      return prodGender == 'kids' || prodGender == 'kid';
-                    } else if (g['key'] == 'men') {
-                      return prodGender == 'men' || prodGender == 'unisex';
-                    } else {
-                      return prodGender == 'women' || prodGender == 'unisex';
-                    }
-                  }).toList();
                   Get.to(
                     () => ProductListScreen(
                       title: "${g['title']}'s Collection",
@@ -2827,22 +2891,25 @@ class _ShowcaseCollectionsSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const SectionHeader(
-          title: 'Signature Showcase',
-          subtitle: 'Uniquely crafted heritage collections',
-        ),
-        const SizedBox(height: 12),
-        Obx(() {
-          if (controller.isShowcaseLoading.value) {
-            return const _ShowcaseShimmer();
-          }
+    return Obx(() {
+      if (controller.isShowcaseLoading.value) {
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: const [
+            SectionHeader(
+              title: 'Signature Showcase',
+              subtitle: 'Uniquely crafted heritage collections',
+            ),
+            SizedBox(height: 12),
+            _ShowcaseShimmer(),
+            SizedBox(height: 24),
+          ],
+        );
+      }
 
-          if (controller.showcaseList.isEmpty) {
-            return const SizedBox.shrink();
-          }
+      if (controller.showcaseList.isEmpty) {
+        return const SizedBox.shrink();
+      }
 
           final items = controller.showcaseList.toList();
           final List<Widget> children = [];
@@ -2879,15 +2946,24 @@ class _ShowcaseCollectionsSection extends StatelessWidget {
             }
           }
 
-          return Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16),
-            child: Column(
-              children: children,
-            ),
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const SectionHeader(
+                title: 'Signature Showcase',
+                subtitle: 'Uniquely crafted heritage collections',
+              ),
+              const SizedBox(height: 12),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                child: Column(
+                  children: children,
+                ),
+              ),
+              const SizedBox(height: 24),
+            ],
           );
-        }),
-      ],
-    );
+        });
   }
 }
 

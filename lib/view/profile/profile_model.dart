@@ -180,9 +180,9 @@ class AppointmentHistory {
 
     return AppointmentHistory(
       id: json['_id'] as String? ?? '',
-      purpose: json['purposeOfVisit'] as String? ?? json['purpose'] as String? ?? 'Jewellery Consultation',
-      date: rawDate.isNotEmpty ? rawDate : 'TBD',
-      timeSlot: json['preferredTime'] as String? ?? json['timeSlot'] as String? ?? json['time'] as String? ?? 'TBD',
+      purpose: json['purposeOfVisit'] as String? ?? json['purpose'] as String? ?? '',
+      date: rawDate,
+      timeSlot: json['preferredTime'] as String? ?? json['timeSlot'] as String? ?? json['time'] as String? ?? '',
       status: statusEnum,
       notes: constructedNotes,
     );
@@ -218,7 +218,7 @@ class WalletTransaction {
     final amount = (json['amount'] as num? ?? 0).toDouble();
     return WalletTransaction(
       id: json['_id'] as String? ?? '',
-      referredCustomerName: json['description'] as String? ?? (typeStr == 'earn' ? 'Earned Bonus' : 'Redeemed Coins'),
+      referredCustomerName: json['description'] as String? ?? '',
       invoiceValue: 0,
       commissionAmount: amount,
       status: typeStr == 'earn' ? CommissionStatus.approved : CommissionStatus.reversed,
