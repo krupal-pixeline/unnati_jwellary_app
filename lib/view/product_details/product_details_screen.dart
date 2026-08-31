@@ -2525,6 +2525,8 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
                       fillColor: AppColors.backgroundSecondary.withValues(alpha: 0.3),
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(10),
+
+                        
                         borderSide: BorderSide(
                           color: AppColors.border.withValues(alpha: 0.5),
                         ),

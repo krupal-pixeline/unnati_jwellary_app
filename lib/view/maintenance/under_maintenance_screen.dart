@@ -159,20 +159,7 @@ class _UnderMaintenanceScreenState extends State<UnderMaintenanceScreen>
                 children: [
                   const Spacer(flex: 2),
 
-                  // ── Brand Logo & Header ─────────────────────────────
-                  SizedBox(
-                    width: 90,
-                    height: 90,
-                    child: Image.asset(
-                      'assets/images/app_logo.png',
-                      fit: BoxFit.contain,
-                      errorBuilder: (_, __, ___) => const Icon(
-                        Icons.diamond_rounded,
-                        size: 48,
-                        color: AppColors.primaryGold,
-                      ),
-                    ),
-                  ),
+                 
                   const SizedBox(height: 12),
                   Text(
                     'UNNATI JEWELLERS',
