@@ -185,13 +185,13 @@ class SplashController extends GetxController
                 } else {
                   // 🟡 Optional Update: Show Dialog & proceed to app on skip
                   OtherMethods.customLog('⚠️ [SplashController] Optional Update Available. Showing Update Dialog.');
-                  showAppUpdateDialog(
-                    currentVersion: currentVersion,
-                    latestVersion: latestVersion,
-                    onSkip: () {
-                      _routeUserAfterSplash();
-                    },
-                  );
+                  // showAppUpdateDialog(
+                  //   currentVersion: currentVersion,
+                  //   latestVersion: latestVersion,
+                  //   onSkip: () {
+                  //     _routeUserAfterSplash();
+                  //   },
+                  // );
                   return;
                 }
               }
